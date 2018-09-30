@@ -4,8 +4,8 @@ require 'open-uri'
 require 'nokogiri'
 
 
-URL = 'https://ameblo.jp/morningmusume-10ki/entry-12397451202.html'
-#URL = 'https://ameblo.jp/morningmusume-10ki/entry-11351538282.html' # FIRST BLOG
+URL = 'https://ameblo.jp/morningmusume-10ki/entry-11351538282.html' # FIRST BLOG
+#URL = 'https://ameblo.jp/morningmusume-10ki/entry-11458174858.html'
 AMEBLO_URL = 'https://ameblo.jp'
 PROJECT_URL = '/home/amakza/sites/thefirstgame/app/assets/images/ameblo/'
 IMG_REGEX = Regexp.new('^https:\/\/stat\.ameba\.jp\/{1,2}user_images\/\d{8}\/\d+\/morningmusume-10ki')
@@ -17,7 +17,7 @@ def run(url)
 end
 
 def main(url)
-  #if @index <= 10
+  retries ||= 0
   if !url.nil?
     begin
       doc = Nokogiri::HTML(open(url))
@@ -33,15 +33,19 @@ def main(url)
         @index += 1
       else
         puts 'SECRETSECRETSECRETSECRETSECRETSECRET'
+        File.open('/home/amakza/scripts/secret.txt','a+') { |f| f.puts(url) }
       end
 
-      sleep 1
+      sleep 0.5
       main get_next_post_url doc
     rescue => e
       puts 'FATAL ERROR'
       puts "URL: #{url}"
       puts e
       puts e.backtrace
+      retries += 1
+      puts "Retrying(#{retries})"
+      retry if retries <= 3
       return
     end
   end
@@ -60,12 +64,11 @@ def get_next_post_url(doc)
 
   if doc.at_css('a.ga-entryPagingPrev')
     href = doc.css('a.ga-entryPagingPrev').attr('href')
-  elsif
-    doc.css('a.ga-pagingEntryPrevBottom')
-    return nil
-  else
+  elsif doc.css('a.ga-pagingEntryPrevBottom')
     puts 'SECRETSECRETSECRETSECRETSECRETSECRET'
     href = doc.css('a.ga-pagingEntryPrevBottom').attr('href')
+  else
+    return nil
   end
 
   if href.value.start_with?('http')
