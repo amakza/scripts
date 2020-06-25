@@ -5,7 +5,9 @@ require 'nokogiri'
 
 
 URL = 'https://ameblo.jp/morningmusume-10ki/entry-11351538282.html' # FIRST BLOG
-#URL = 'https://ameblo.jp/morningmusume-10ki/entry-11458174858.html'
+#URL = 'https://ameblo.jp/morningmusume-10ki/entry-12448409534.html' #Last scraping 19/03/21
+#URL = 'https://ameblo.jp/morningmusume-10ki/entry-12507109998.html' #Last scraping 19/03/21
+
 AMEBLO_URL = 'https://ameblo.jp'
 PROJECT_URL = '/home/amakza/sites/thefirstgame/app/assets/images/ameblo/'
 IMG_REGEX = Regexp.new('^https:\/\/stat\.ameba\.jp\/{1,2}user_images\/\d{8}\/\d+\/morningmusume-10ki')
