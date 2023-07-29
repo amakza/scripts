@@ -3,6 +3,7 @@ require 'watir'
 require 'json'
 require 'webdrivers'
 
+# Get information for the blog to scrape
 CONFIG = OpenStruct.new(YAML.load_file("config/ameblo.yml")['ameblo'])
 BLOG = CONFIG['blogs']['morningmusume-10ki']
 
@@ -41,11 +42,14 @@ def new_ameblo_main(blog_id, publish_flg = 'open')
 
       @browser.goto(blog_url)
 
+      # Get data related to the post (and link to next post)
       data = get_post_data blog_id, publish_flg
+      # Get all images inside the post
       images = get_images publish_flg
 
       puts "(#{@index}) Getting #{images.length} images from #{data[:member]}'s post: #{data[:title]}"
 
+      # Download images
       images.each do |url|
         download_image url, data[:member]
         blog_images << AmebloImage.new({
@@ -56,6 +60,7 @@ def new_ameblo_main(blog_id, publish_flg = 'open')
 
       data.merge!(get_meta_data blog_id)
 
+      # Create entry in the DB
       AmebloPost.create({
         blog_id: blog_id,
         ameblo_id: BLOG['id'],
@@ -72,11 +77,11 @@ def new_ameblo_main(blog_id, publish_flg = 'open')
 
       @index += 1
 
-      if data[:next_id].nil? 
+      if data[:next_id].blank?
         return 0
       end
 
-      sleep 0.5
+      sleep 1
       new_ameblo_main data[:next_id], data[:next_publish_flg]
 
 
@@ -85,7 +90,9 @@ def new_ameblo_main(blog_id, publish_flg = 'open')
       puts "URL: #{@browser.url}"
       puts "DATA: #{data.inspect}"
       puts e
-      puts e.backtrace
+      # Backtracing an error make it appear for each time the main function was called (because
+      # its is recursive). So either put this logic on a different function or stop backtracing
+      #puts e.backtrace
       retries += 1
       puts "Retrying(#{retries})"
       retry if retries <= 3
@@ -137,9 +144,14 @@ def get_post_data(blog_id, publish_flg)
     member = data['entryState']['entryMap'][blog_id]['theme_name']
     title = data['entryState']['entryMap'][blog_id]['entry_title']
     blog_date = data['entryState']['entryMap'][blog_id]['entry_created_datetime']
-    next_id= data['entryState']['entryMetaMap'][blog_id]['paging']['next'].to_s
-    # publish_flag 'open' | 'amember'
-    next_publish_flg = data['entryState']['entryMap'][next_id]['publish_flg']
+    if data['entryState']['entryMetaMap'][blog_id]['paging']['next']
+      next_id = data['entryState']['entryMetaMap'][blog_id]['paging']['next'].to_s
+      next_publish_flg = data['entryState']['entryMap'][next_id]['publish_flg']
+    else
+      next_id = ""
+      next_publish_flg = ""
+    end
+
   end
 
   if publish_flg == 'amember'
